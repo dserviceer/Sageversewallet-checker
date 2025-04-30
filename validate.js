@@ -66,7 +66,7 @@ function validateWalletUI() {
             validWalletsGlobal.push(addr);
             validCount++;
 
-            // Fetch history/NFTs only for BSC (you can expand later)
+            // Fetch data only for BSC
             if (validationResult.chain === "BSC") {
                 fetchTokenBalances(addr);
                 fetchTransactionHistory(addr);
@@ -87,6 +87,18 @@ function validateWalletUI() {
     `;
 
     resultEl.innerHTML = output;
+}
+
+// Proxy helper to bypass CORS during dev
+async function fetchWithProxy(url) {
+    const proxyUrl = "https://corsproxy.io/?";
+    try {
+        const response = await fetch(proxyUrl + encodeURIComponent(url));
+        return await response.json();
+    } catch (e) {
+        console.error("Proxy fetch failed", e);
+        return null;
+    }
 }
 
 // ============ TOKEN BALANCE FETCHER (BSC ONLY) ============
@@ -116,15 +128,14 @@ async function fetchTokenBalances(address) {
         const url = `https://api.bscscan.com/api?module=account&action=tokenbalance&contractaddress=${t.contract}&address=${address}`;
 
         try {
-            const response = await fetch(url);
-            const data = await response.json();
+            const data = await fetchWithProxy(url);
 
-            if (data.status === "1") {
+            if (data && data.status === "1") {
                 const balance = parseInt(data.result) / 1e18;
                 listEl.innerHTML += `<li>🔶 ${t.symbol}: <strong>${parseFloat(balance).toFixed(4)}</strong></li>`;
             }
         } catch (e) {
-            console.error(`Failed to load balance for ${t.symbol}`);
+            console.error(`Failed to load balance for ${t.symbol}`, e);
         }
     }
 }
@@ -138,20 +149,19 @@ async function fetchTransactionHistory(address) {
     const url = `https://api.bscscan.com/api?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&sort=desc`;
 
     try {
-        const response = await fetch(url);
-        const data = await response.json();
+        const data = await fetchWithProxy(url);
 
-        if (data.status === "1" && data.result.length > 0) {
+        if (data && data.status === "1" && data.result.length > 0) {
             data.result.slice(0, 5).forEach(tx => {
                 const direction = tx.to.toLowerCase() === address.toLowerCase() ? "📥 Received" : "📤 Sent";
-                const value = parseFloat(web3.utils.fromWei(tx.value, 'ether')).toFixed(5);
+                const value = parseFloat(Web3.utils.fromWei(tx.value, 'ether')).toFixed(5);
                 listEl.innerHTML += `<li>🔗 ${direction} <strong>${value} BNB</strong></li>`;
             });
         } else {
             listEl.innerHTML += `<li>No recent transactions found.</li>`;
         }
     } catch (e) {
-        console.error("Failed to fetch transaction history");
+        console.error("Failed to fetch transaction history", e);
     }
 }
 
@@ -164,10 +174,9 @@ async function fetchNftBalance(address) {
     const url = `https://api.bscscan.com/api?module=account&action=tokennfttx&address=${address}&startblock=0&endblock=99999999&sort=desc`;
 
     try {
-        const response = await fetch(url);
-        const data = await response.json();
+        const data = await fetchWithProxy(url);
 
-        if (data.status === "1" && data.result.length > 0) {
+        if (data && data.status === "1" && data.result.length > 0) {
             const uniqueTokens = {};
             data.result.forEach(nft => {
                 const key = `${nft.contractAddress}-${nft.tokenSymbol}`;
@@ -183,7 +192,7 @@ async function fetchNftBalance(address) {
             listEl.innerHTML += `<li>No NFTs found.</li>`;
         }
     } catch (e) {
-        console.error("Failed to fetch NFT balance");
+        console.error("Failed to fetch NFT balance", e);
     }
 }
 
