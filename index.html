@@ -8,52 +8,57 @@
 </head>
 <body>
 
-<canvas id="particles"></canvas>
+  <!-- Background Image -->
+  <div class="background"></div>
 
-<div class="container">
-  <header>
-    <img src="logo.png" alt="Sageverse Logo" class="logo" />
-    <h1>Sageverse Wallet Checker</h1>
-  </header>
+  <!-- Content Container -->
+  <div class="container">
+    <header>
+      <img src="logo.png" alt="Sageverse Logo" class="logo" />
+      <h1>Sageverse Wallet Checker</h1>
+    </header>
 
-  <div class="input-group">
-    <select id="chainSelector">
-      <option value="auto">🔍 Auto-Detect</option>
-      <option value="Ethereum">Ethereum</option>
-      <option value="BSC">Binance Smart Chain</option>
-      <option value="Polygon">Polygon</option>
-      <option value="Arbitrum">Arbitrum</option>
-      <option value="Optimism">Optimism</option>
-      <option value="Solana">Solana</option>
-    </select>
+    <div class="input-group">
+      <select id="chainSelector">
+        <option value="auto">🔍 Auto-Detect</option>
+        <option value="Ethereum">Ethereum</option>
+        <option value="BSC">Binance Smart Chain</option>
+        <option value="Polygon">Polygon</option>
+        <option value="Arbitrum">Arbitrum</option>
+        <option value="Optimism">Optimism</option>
+        <option value="Solana">Solana</option>
+      </select>
 
-    <textarea id="walletInput" placeholder="Paste one wallet per line..."></textarea>
+      <textarea id="walletInput" placeholder="Paste one wallet per line..."></textarea>
 
-    <button onclick="validateWalletUI()">Check Wallet(s) 🔍</button>
+      <button onclick="validateWalletUI()">Check Wallet(s) 🔍</button>
+    </div>
+
+    <div id="stats" class="stats"></div>
+    <div id="result" class="result"></div>
+
+    <div class="export-buttons">
+      <button onclick="copyValidWallets()">📋 Copy Valid Wallets</button>
+      <button onclick="exportToTxt()">💾 Export .txt</button>
+      <button onclick="exportToJson()">📄 Export .json</button>
+      <button onclick="exportToCsv()">📊 Export .csv</button>
+    </div>
+
+    <div class="wallet-connect">
+      <button onclick="connectWallet()">👛 Connect Wallet</button>
+      <p id="walletAddress"></p>
+      <p id="walletBalance"></p>
+    </div>
   </div>
 
-  <div id="stats" class="stats"></div>
-  <div id="result" class="result"></div>
+  <!-- Canvas for Particles -->
+  <canvas id="particles"></canvas>
 
-  <div class="export-buttons">
-    <button onclick="copyValidWallets()">📋 Copy Valid Wallets</button>
-    <button onclick="exportToTxt()">💾 Export .txt</button>
-    <button onclick="exportToJson()">📄 Export .json</button>
-    <button onclick="exportToCsv()">📊 Export .csv</button>
-  </div>
-
-  <div class="wallet-connect">
-    <button onclick="connectWallet()">👛 Connect Wallet</button>
-    <p id="walletAddress"></p>
-    <p id="walletBalance"></p>
-  </div>
-</div>
-
-<!-- Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
-<script src="particles.js"></script>
-<script src="confetti.js"></script>
-<script src="validate.js"></script>
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+  <script src="particles.js"></script>
+  <script src="confetti.js"></script>
+  <script src="validate.js"></script>
 
 </body>
 </html>
