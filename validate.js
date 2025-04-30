@@ -11,7 +11,6 @@ const supportedChains = {
 function validateWallet(address, chain = null) {
     address = address.trim();
     if (!address) return { valid: false };
-
     if (!chain) {
         for (let name in supportedChains) {
             const c = supportedChains[name];
@@ -27,7 +26,6 @@ function validateWallet(address, chain = null) {
     if (c.regex.test(address) && (!c.length || address.length === c.length)) {
         return { valid: true, chain };
     }
-
     return { valid: false };
 }
 
@@ -54,25 +52,20 @@ function validateWalletUI() {
     const addresses = input.split(/\n/).map(a => a.trim()).filter(Boolean);
     let output = "";
     validWalletsGlobal = [];
-
     let validCount = 0, invalidCount = 0;
 
     addresses.forEach(addr => {
         const validationResult = validateWallet(addr, selectedChain === "auto" ? null : selectedChain);
-
         if (validationResult.valid) {
             const chain = supportedChains[validationResult.chain];
             output += `<p>${chain.icon} ${validationResult.chain}: <strong>${getFingerprint(addr)}</strong></p>`;
             validWalletsGlobal.push(addr);
             validCount++;
-
-            // Fetch data only for BSC
             if (validationResult.chain === "BSC") {
                 fetchTokenBalances(addr);
                 fetchTransactionHistory(addr);
                 fetchNftBalance(addr);
             }
-
             createSparkles(window.innerWidth / 2, window.innerHeight / 2);
         } else {
             output += `<p>❌ Invalid: ${addr.slice(0, 10)}...</p>`;
@@ -85,18 +78,18 @@ function validateWalletUI() {
         ✅ Valid: <strong>${validCount}</strong> |
         ❌ Invalid: <strong>${invalidCount}</strong>
     `;
-
     resultEl.innerHTML = output;
 }
 
-// Proxy helper to bypass CORS during dev
 async function fetchWithProxy(url) {
     const proxyUrl = "https://corsproxy.io/?";
     try {
         const response = await fetch(proxyUrl + encodeURIComponent(url));
+        if (!response.ok) throw new Error("Network response was not ok");
         return await response.json();
     } catch (e) {
         console.error("Proxy fetch failed", e);
+        alert("⚠️ CORS Proxy error – only use this for development.");
         return null;
     }
 }
@@ -114,13 +107,11 @@ async function fetchTokenBalances(address) {
     resultEl.innerHTML += `<h3 style="margin-top:25px;">💰 Token Balances</h3><ul id="tokenBalanceList"></ul>`;
     const listEl = document.getElementById("tokenBalanceList");
 
-    // Native balance
     const web3 = new Web3("https://bsc-dataseed.binance.org/");
     const balance = await web3.eth.getBalance(address);
     const bnbBalance = web3.utils.fromWei(balance, 'ether');
     listEl.innerHTML += `<li>🟡 BNB: <strong>${parseFloat(bnbBalance).toFixed(5)}</strong></li>`;
 
-    // Token balances
     for (let token in tokens) {
         const t = tokens[token];
         if (!t.contract) continue;
@@ -129,7 +120,6 @@ async function fetchTokenBalances(address) {
 
         try {
             const data = await fetchWithProxy(url);
-
             if (data && data.status === "1") {
                 const balance = parseInt(data.result) / 1e18;
                 listEl.innerHTML += `<li>🔶 ${t.symbol}: <strong>${parseFloat(balance).toFixed(4)}</strong></li>`;
@@ -150,7 +140,6 @@ async function fetchTransactionHistory(address) {
 
     try {
         const data = await fetchWithProxy(url);
-
         if (data && data.status === "1" && data.result.length > 0) {
             data.result.slice(0, 5).forEach(tx => {
                 const direction = tx.to.toLowerCase() === address.toLowerCase() ? "📥 Received" : "📤 Sent";
@@ -175,7 +164,6 @@ async function fetchNftBalance(address) {
 
     try {
         const data = await fetchWithProxy(url);
-
         if (data && data.status === "1" && data.result.length > 0) {
             const uniqueTokens = {};
             data.result.forEach(nft => {
@@ -230,7 +218,7 @@ function exportToJson() {
 }
 
 function exportToCsv() {
-    let csv = "Wallet Address\n" + validWalletsGlobal.map(addr => addr).join("\n");
+    let csv = "Wallet Address\n" + validWalletsGlobal.map(addr => `"${addr}"`).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -246,7 +234,6 @@ async function connectWallet() {
         alert("🚫 No wallet detected... where's your ETH? 😂");
         return;
     }
-
     try {
         const [account] = await window.ethereum.request({ method: 'eth_requestAccounts' });
         document.getElementById('walletAddress').innerText = `Connected: ${account}`;
@@ -254,12 +241,9 @@ async function connectWallet() {
         const balance = await web3.eth.getBalance(account);
         const ethBalance = web3.utils.fromWei(balance, 'ether');
         document.getElementById('walletBalance').innerText = `💰 Balance: ${parseFloat(ethBalance).toFixed(4)} ETH`;
-
         createSparkles(window.innerWidth / 2, window.innerHeight / 2);
-
     } catch (error) {
         console.error("Connection failed", error.message);
-
         if (error.code === 4001) {
             alert("You rejected the connection request 😒 Let's try again.");
         } else {
@@ -267,10 +251,9 @@ async function connectWallet() {
         }
     }
 }
-
 window.connectWallet = connectWallet;
 
-// ============ CONFETTI FUNCTION ============
+// ============ SPARKLES EFFECT ============
 function createSparkles(x, y) {
     for (let i = 0; i < 20; i++) {
         const sparkle = document.createElement('div');
