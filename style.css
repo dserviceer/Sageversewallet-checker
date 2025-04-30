@@ -1,27 +1,28 @@
 /* == Base Styles == */
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  margin: 0;
-  padding: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background-color: #121212;
   color: white;
+  overflow-x: hidden;
 }
 
 .container {
-  max-width: 400px;
+  max-width: 500px;
   margin: auto;
-  padding: 20px;
+  padding: 30px 20px;
   position: relative;
   z-index: 2;
 }
 
 h1 {
   text-align: center;
-  font-size: 1.5em;
+  font-size: 1.8em;
   margin-bottom: 20px;
 }
 
@@ -39,7 +40,7 @@ select, textarea {
 button {
   width: 100%;
   padding: 12px;
-  margin-top: 10px;
+  margin-top: 12px;
   background: linear-gradient(to right, #4e54c8, #8f94fb);
   border: none;
   color: white;
@@ -47,6 +48,12 @@ button {
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease-in-out;
+  font-size: 1em;
+}
+
+button:hover {
+  transform: scale(1.03);
+  box-shadow: 0 0 10px #8f94fb;
 }
 
 textarea {
@@ -70,8 +77,17 @@ textarea {
 .export-buttons {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
+  justify-content: space-between;
   margin-top: 20px;
+}
+
+.export-buttons button {
+  flex: 1 1 calc(50% - 6px);
+  min-width: calc(50% - 6px);
+  max-width: calc(50% - 6px);
+  padding: 10px;
+  font-size: 0.9em;
 }
 
 .wallet-connect {
@@ -84,6 +100,7 @@ textarea {
   font-size: 0.95em;
 }
 
+/* == Canvas / Particles == */
 canvas {
   position: fixed;
   top: 0;
@@ -101,4 +118,18 @@ canvas {
   pointer-events: none;
   z-index: 9999;
   opacity: 1;
+}
+
+/* === Desktop Only Enhancements === */
+@media screen and (min-width: 768px) {
+  .export-buttons button {
+    flex: 1 1 calc(25% - 10px);
+    min-width: 100px;
+    max-width: 130px;
+    font-size: 0.9em;
+  }
+
+  .container {
+    padding: 40px 20px;
+  }
 }
