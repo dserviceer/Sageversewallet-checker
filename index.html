@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Sageverse Wallet Checker</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body class="dark-mode">
+
+<canvas id="particles"></canvas>
+
+<div class="container">
+    <h1>🌌 Sageverse Wallet Checker</h1>
+
+    <select id="chainSelector">
+        <option value="auto">🔍 Auto-Detect</option>
+        <option value="Ethereum">Ethereum</option>
+        <option value="BSC">Binance Smart Chain</option>
+        <option value="Polygon">Polygon</option>
+        <option value="Arbitrum">Arbitrum</option>
+        <option value="Optimism">Optimism</option>
+        <option value="Solana">Solana</option>
+    </select>
+
+    <textarea id="walletInput" placeholder="Paste one wallet per line..."></textarea>
+
+    <button onclick="validateWalletUI()">Check Wallet(s) 🔍</button>
+
+    <div id="stats" style="margin-top:10px;"></div>
+    <div id="result" style="margin-top:20px;"></div>
+
+    <div style="margin-top:25px;">
+        <button onclick="copyValidWallets()">📋 Copy Valid Wallets</button>
+        <button onclick="exportToTxt()">💾 Export to .txt</button>
+    </div>
+
+    <div style="margin-top:25px;">
+        <button onclick="connectWallet()">👛 Connect Wallet</button>
+        <p id="walletAddress" style="margin-top:10px;"></p>
+        <p id="walletBalance" style="margin-top:5px;"></p>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+<script src="particles.js"></script>
+<script src="confetti.js"></script>
+<script src="validate.js"></script>
+
+</body>
+</html>
