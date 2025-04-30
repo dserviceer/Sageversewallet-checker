@@ -96,3 +96,32 @@ function exportToTxt() {
     a.click();
     URL.revokeObjectURL(url);
 }
+
+// ============ WALLET CONNECT ============
+let web3;
+let currentAccount;
+
+async function connectWallet() {
+    if (typeof window.ethereum === 'undefined') {
+        alert("MetaMask not found. Please install it.");
+        return;
+    }
+
+    try {
+        const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+        currentAccount = accounts[0];
+        document.getElementById('walletAddress').innerText = "Connected: " + currentAccount;
+
+        web3 = new Web3(window.ethereum);
+        const balance = await web3.eth.getBalance(currentAccount);
+        const ethBalance = web3.utils.fromWei(balance, 'ether');
+        document.getElementById('walletBalance').innerText = `💰 Balance: ${parseFloat(ethBalance).toFixed(4)} ETH`;
+
+    } catch (error) {
+        console.error("User denied account access", error);
+        alert("You need to allow MetaMask access.");
+    }
+}
+
+// Attach to global scope so HTML buttons can use it
+window.connectWallet = connectWallet;
