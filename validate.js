@@ -82,15 +82,16 @@ function validateWalletUI() {
     resultEl.innerHTML = output;
 }
 
-// Proxy helper to bypass CORS during dev
-async function fetchWithProxy(url) {
-    const proxyUrl = "https://corsproxy.io/?";
+async function fetchDirect(url) {
     try {
-        const response = await fetch(proxyUrl + encodeURIComponent(url));
+        const response = await fetch(url);
+        if (!response.ok) {
+            console.error("HTTP error", response.status);
+            return null;
+        }
         return await response.json();
     } catch (e) {
-        console.error("Proxy fetch failed", e);
-        alert("⚠️ CORS Proxy error – only use this for development.");
+        console.error("Fetch failed:", e.message);
         return null;
     }
 }
@@ -108,29 +109,28 @@ async function fetchTokenBalances(address) {
     resultEl.innerHTML += `<h3 style="margin-top:25px;">💰 Token Balances</h3><ul id="tokenBalanceList"></ul>`;
     const listEl = document.getElementById("tokenBalanceList");
 
+    // Native BNB Balance
     const web3 = new Web3("https://bsc-dataseed.binance.org/");
     const balance = await web3.eth.getBalance(address);
     const bnbBalance = web3.utils.fromWei(balance, 'ether');
     listEl.innerHTML += `<li>🟡 BNB: <strong>${parseFloat(bnbBalance).toFixed(5)}</strong></li>`;
 
+    // ERC-20 Token Balances
     for (let token in tokens) {
         const t = tokens[token];
         if (!t.contract) continue;
 
         const url = `https://api.bscscan.com/api?module=account&action=tokenbalance&contractaddress=${t.contract}&address=${address}&apikey=7JJ2UJCFEZ3I1SPWZG6AUX5Q82FN3J4ZIQ`;
 
-        try {
-            const data = await fetchWithProxy(url);
-            if (data && data.status === "1") {
-                const balance = parseInt(data.result) / 1e18;
-                listEl.innerHTML += `<li>🔶 ${t.symbol}: <strong>${parseFloat(balance).toFixed(4)}</strong></li>`;
-            }
-        } catch (e) {
-            console.error(`Failed to load balance for ${t.symbol}`, e);
+        const data = await fetchDirect(url);
+        if (data && data.status === "1") {
+            const balance = parseInt(data.result) / 1e18;
+            listEl.innerHTML += `<li>🔶 ${t.symbol}: <strong>${parseFloat(balance).toFixed(4)}</strong></li>`;
+        } else {
+            listEl.innerHTML += `<li>🚫 ${t.symbol}: Not found or inaccessible</li>`;
         }
     }
 }
-
 // ============ TRANSACTION HISTORY (BSC ONLY) ============
 async function fetchTransactionHistory(address) {
     const resultEl = document.getElementById('result');
