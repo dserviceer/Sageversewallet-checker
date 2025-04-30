@@ -85,7 +85,6 @@ async function fetchWithProxy(url) {
     const proxyUrl = "https://corsproxy.io/?";
     try {
         const response = await fetch(proxyUrl + encodeURIComponent(url));
-        if (!response.ok) throw new Error("Network response was not ok");
         return await response.json();
     } catch (e) {
         console.error("Proxy fetch failed", e);
@@ -116,7 +115,7 @@ async function fetchTokenBalances(address) {
         const t = tokens[token];
         if (!t.contract) continue;
 
-        const url = `https://api.bscscan.com/api?module=account&action=tokenbalance&contractaddress=${t.contract}&address=${address}`;
+        const url = `https://api.bscscan.com/api?module=account&action=tokenbalance&contractaddress=${t.contract}&address=${address}&apikey=7JJ2UJCFEZ3I1SPWZG6AUX5Q82FN3J4ZIQ`;
 
         try {
             const data = await fetchWithProxy(url);
@@ -136,7 +135,7 @@ async function fetchTransactionHistory(address) {
     resultEl.innerHTML += `<h3 style="margin-top:25px;">🧾 Recent Transactions</h3><ul id="txList"></ul>`;
     const listEl = document.getElementById("txList");
 
-    const url = `https://api.bscscan.com/api?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&sort=desc`;
+    const url = `https://api.bscscan.com/api?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&sort=desc&apikey=7JJ2UJCFEZ3I1SPWZG6AUX5Q82FN3J4ZIQ`;
 
     try {
         const data = await fetchWithProxy(url);
@@ -160,7 +159,7 @@ async function fetchNftBalance(address) {
     resultEl.innerHTML += `<h3 style="margin-top:25px;">🖼️ NFTs Owned</h3><ul id="nftList"></ul>`;
     const listEl = document.getElementById("nftList");
 
-    const url = `https://api.bscscan.com/api?module=account&action=tokennfttx&address=${address}&startblock=0&endblock=99999999&sort=desc`;
+    const url = `https://api.bscscan.com/api?module=account&action=tokennfttx&address=${address}&startblock=0&endblock=99999999&sort=desc&apikey=7JJ2UJCFEZ3I1SPWZG6AUX5Q82FN3J4ZIQ`;
 
     try {
         const data = await fetchWithProxy(url);
