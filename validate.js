@@ -35,53 +35,7 @@ function getFingerprint(address) {
 
 let validWalletsGlobal = [];
 
-// Progress Bar DOM
-const progressBar = document.createElement("div");
-progressBar.className = "progress-bar";
-document.body.appendChild(progressBar);
-
-async function resolveEns(name) {
-    const provider = new ethers.providers.JsonRpcProvider("https://rpc.ankr.com/eth");
-    try {
-        return await provider.resolveName(name);
-    } catch (e) {
-        console.error("ENS Resolution Failed", e);
-        return null;
-    }
-}
-
-function getBadgeHtml(status) {
-    switch (status) {
-        case 'active': return `<span class="status-badge badge-active">Active</span>`;
-        case 'dormant': return `<span class="status-badge badge-dormant">Dormant</span>`;
-        case 'airdrop': return `<span class="status-badge badge-airdrop">Airdrop</span>`;
-        default: return '';
-    }
-}
-
-async function getLastTxnTimestamp(address) {
-    const url = `https://api.bscscan.com/api?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&sort=desc&apikey=7JJ2UJCFEZ3I1SPWZG6AUX5Q82FN3J4ZIQ`;
-    try {
-        const data = await fetch(url).then(res => res.json());
-        if (data.status === "1") {
-            const latestTx = data.result[0];
-            return parseInt(latestTx.timeStamp) * 1000;
-        }
-    } catch (e) {
-        console.error("Failed to fetch last txn");
-    }
-    return null;
-}
-
-function getStatusFromLastTx(timestamp) {
-    const now = Date.now();
-    const diffDays = (now - timestamp) / (1000 * 60 * 60 * 24);
-    if (diffDays < 30) return 'active';
-    if (diffDays > 365) return 'dormant';
-    return 'airdrop';
-}
-
-async function validateWalletUI() {
+function validateWalletUI() {
     const input = document.getElementById('walletInput').value.trim();
     const resultEl = document.getElementById('result');
     const statsEl = document.getElementById('stats');
@@ -100,38 +54,14 @@ async function validateWalletUI() {
     validWalletsGlobal = [];
     let validCount = 0, invalidCount = 0;
 
-    // Show progress bar
-    progressBar.style.width = "0%";
-    setTimeout(() => progressBar.style.width = "100%", 50);
-
-    for (let i = 0; i < addresses.length; i++) {
-        let addr = addresses[i].toLowerCase();
-
-        // Try ENS resolution
-        if (addr.endsWith('.eth')) {
-            addr = await resolveEns(addr);
-        }
-
+    addresses.forEach(addr => {
         const validationResult = validateWallet(addr, selectedChain === "auto" ? null : selectedChain);
-
         if (validationResult.valid) {
             const chain = supportedChains[validationResult.chain];
-            const fingerprint = getFingerprint(addr);
-
-            // Get status
-            let status = '';
-            if (validationResult.chain === "BSC") {
-                const timestamp = await getLastTxnTimestamp(addr);
-                status = timestamp ? getStatusFromLastTx(timestamp) : '';
-            }
-
-            // Tag input field
-            const tagInput = `<input type="text" placeholder="Tag (optional)" data-addr="${addr}" style="width:100%; margin-top:5px; padding:4px; border-radius:4px; border:1px solid #aaa;">`;
-
-            output += `<p>${chain.icon} ${validationResult.chain}: <strong>${fingerprint}</strong>${getBadgeHtml(status)}<br>${tagInput}</p>`;
-
-            validWalletsGlobal.push({ address: addr, tag: "", status });
+            output += `<p>${chain.icon} ${validationResult.chain}: <strong>${getFingerprint(addr)}</strong></p>`;
+            validWalletsGlobal.push(addr);
             validCount++;
+            // Fetch data only for BSC
             if (validationResult.chain === "BSC") {
                 fetchTokenBalances(addr);
                 fetchTransactionHistory(addr);
@@ -142,19 +72,14 @@ async function validateWalletUI() {
             output += `<p>❌ Invalid: ${addr.slice(0, 10)}...</p>`;
             invalidCount++;
         }
+    });
 
-        // Update UI gradually
-        resultEl.innerHTML = output;
-        statsEl.innerHTML = `
-            🧮 Total: <strong>${addresses.length}</strong> |
-            ✅ Valid: <strong>${validCount}</strong> |
-            ❌ Invalid: <strong>${invalidCount}</strong>
-        `;
-        await new Promise(r => setTimeout(r, 200)); // small delay for effect
-    }
-
-    // Reset progress bar
-    setTimeout(() => progressBar.style.width = "0%", 1000);
+    statsEl.innerHTML = `
+        🧮 Total: <strong>${addresses.length}</strong> |
+        ✅ Valid: <strong>${validCount}</strong> |
+        ❌ Invalid: <strong>${invalidCount}</strong>
+    `;
+    resultEl.innerHTML = output;
 }
 
 // Proxy helper to bypass CORS during dev
@@ -262,28 +187,14 @@ async function fetchNftBalance(address) {
 
 // ============ COPY & EXPORT ============
 function copyValidWallets() {
-    const inputs = document.querySelectorAll(".container input[type='text']");
-    inputs.forEach(input => {
-        const addr = input.getAttribute("data-addr");
-        const index = validWalletsGlobal.findIndex(w => w.address === addr);
-        if (index !== -1) validWalletsGlobal[index].tag = input.value;
-    });
-
-    const text = validWalletsGlobal.map(w => w.address + (w.tag ? ` (${w.tag})` : "")).join("\n");
+    const text = validWalletsGlobal.join("\n");
     navigator.clipboard.writeText(text).then(() => {
         alert("✅ Copied " + validWalletsGlobal.length + " valid wallet(s)!");
     });
 }
 
 function exportToTxt() {
-    const inputs = document.querySelectorAll(".container input[type='text']");
-    inputs.forEach(input => {
-        const addr = input.getAttribute("data-addr");
-        const index = validWalletsGlobal.findIndex(w => w.address === addr);
-        if (index !== -1) validWalletsGlobal[index].tag = input.value;
-    });
-
-    const blob = new Blob([validWalletsGlobal.map(w => w.address + (w.tag ? ` (${w.tag})` : "")).join("\n")], { type: 'text/plain' });
+    const blob = new Blob([validWalletsGlobal.join("\n")], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -293,13 +204,6 @@ function exportToTxt() {
 }
 
 function exportToJson() {
-    const inputs = document.querySelectorAll(".container input[type='text']");
-    inputs.forEach(input => {
-        const addr = input.getAttribute("data-addr");
-        const index = validWalletsGlobal.findIndex(w => w.address === addr);
-        if (index !== -1) validWalletsGlobal[index].tag = input.value;
-    });
-
     const data = {
         wallets: validWalletsGlobal,
         count: validWalletsGlobal.length,
@@ -310,6 +214,17 @@ function exportToJson() {
     const a = document.createElement("a");
     a.href = url;
     a.download = "valid_wallets.json";
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function exportToCsv() {
+    let csv = "Wallet Address\n" + validWalletsGlobal.map(addr => `"${addr}"`).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "valid_wallets.csv";
     a.click();
     URL.revokeObjectURL(url);
 }
