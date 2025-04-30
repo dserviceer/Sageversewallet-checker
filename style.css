@@ -14,9 +14,8 @@ body {
     justify-content: center;
     min-height: 100vh;
     text-align: center;
-    position: relative;
-    z-index: 1;
     padding: 20px;
+    box-sizing: border-box;
 }
 
 input, textarea {
@@ -74,4 +73,25 @@ canvas {
 #stats {
     font-size: 0.9em;
     color: #aaa;
+}
+
+/* == Responsive Design == */
+@media screen and (max-width: 480px) {
+    .container {
+        padding: 10px;
+    }
+
+    input, textarea, button {
+        width: 100%;
+        max-width: 100%;
+        font-size: 0.9em;
+    }
+
+    h1 {
+        font-size: 1.5em;
+    }
+
+    #result {
+        font-size: 1em;
+    }
 }
