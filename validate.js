@@ -1,3 +1,4 @@
+// ============ WALLET VALIDATION ============
 const supportedChains = {
     Ethereum: { regex: /^0x[a-fA-F0-9]{40}$/, length: 42, icon: "🟢" },
     BSC: { regex: /^0x[a-fA-F0-9]{40}$/, length: 42, icon: "🟡" },
@@ -80,6 +81,7 @@ function validateWalletUI() {
     resultEl.innerHTML = output;
 }
 
+// ============ COPY & EXPORT ============
 function copyValidWallets() {
     const text = validWalletsGlobal.join("\n");
     navigator.clipboard.writeText(text).then(() => {
@@ -98,30 +100,69 @@ function exportToTxt() {
 }
 
 // ============ WALLET CONNECT ============
-let web3;
-let currentAccount;
 
 async function connectWallet() {
-    if (typeof window.ethereum === 'undefined') {
-        alert("MetaMask not found. Please install it.");
+    // Show funny alerts if no wallet is found
+    if (typeof window.ethereum === 'undefined' && typeof window.WalletConnectProvider === 'undefined') {
+        alert("🚫 No wallet detected... where's your ETH? 😂");
         return;
     }
 
     try {
-        const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-        currentAccount = accounts[0];
-        document.getElementById('walletAddress').innerText = "Connected: " + currentAccount;
+        let account;
+        let providerType = 'unknown';
 
-        web3 = new Web3(window.ethereum);
-        const balance = await web3.eth.getBalance(currentAccount);
+        // Try MetaMask first
+        if (window.ethereum) {
+            [account] = await window.ethereum.request({ method: 'eth_requestAccounts' });
+            providerType = 'MetaMask or Browser Wallet';
+        }
+
+        // Optional: Add WalletConnect later using QR code
+        // For now, we'll just support in-browser wallets like MetaMask and Trust Wallet
+
+        document.getElementById('walletAddress').innerText = `Connected: ${account}`;
+        const web3 = new Web3(window.ethereum);
+        const balance = await web3.eth.getBalance(account);
         const ethBalance = web3.utils.fromWei(balance, 'ether');
         document.getElementById('walletBalance').innerText = `💰 Balance: ${parseFloat(ethBalance).toFixed(4)} ETH`;
 
+        // Confetti on success 💥
+        createSparkles(window.innerWidth / 2, window.innerHeight / 2);
+
     } catch (error) {
-        console.error("User denied account access", error);
-        alert("You need to allow MetaMask access.");
+        console.error("Connection failed", error.message);
+
+        if (error.code === 4001) {
+            alert("You rejected the connection request 😒 Let's try again.");
+        } else {
+            alert("😵 Something went wrong. Try refreshing?");
+        }
     }
 }
 
 // Attach to global scope so HTML buttons can use it
 window.connectWallet = connectWallet;
+
+// ============ CONFETTI FUNCTION ============
+function createSparkles(x, y) {
+    for (let i = 0; i < 20; i++) {
+        const sparkle = document.createElement('div');
+        sparkle.className = 'sparkle';
+        sparkle.style.left = x + 'px';
+        sparkle.style.top = y + 'px';
+        sparkle.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 70%)`;
+        sparkle.style.transform = `scale(${Math.random()})`;
+        document.body.appendChild(sparkle);
+
+        const angle = Math.random() * 360;
+        const distance = 100 + Math.random() * 100;
+
+        setTimeout(() => {
+            sparkle.style.opacity = 0;
+            sparkle.style.transform = `translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px) scale(0)`;
+        }, 50);
+
+        setTimeout(() => sparkle.remove(), 1000);
+    }
+}
