@@ -99,35 +99,47 @@ function exportToTxt() {
     URL.revokeObjectURL(url);
 }
 
-// ============ WALLET CONNECT ============
+function exportToJson() {
+    const data = {
+        wallets: validWalletsGlobal,
+        count: validWalletsGlobal.length,
+        timestamp: new Date().toISOString()
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "valid_wallets.json";
+    a.click();
+    URL.revokeObjectURL(url);
+}
 
+function exportToCsv() {
+    let csv = "Wallet Address\n" + validWalletsGlobal.map(addr => addr).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "valid_wallets.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+// ============ WALLET CONNECT ============
 async function connectWallet() {
-    // Show funny alerts if no wallet is found
-    if (typeof window.ethereum === 'undefined' && typeof window.WalletConnectProvider === 'undefined') {
+    if (typeof window.ethereum === 'undefined') {
         alert("🚫 No wallet detected... where's your ETH? 😂");
         return;
     }
 
     try {
-        let account;
-        let providerType = 'unknown';
-
-        // Try MetaMask first
-        if (window.ethereum) {
-            [account] = await window.ethereum.request({ method: 'eth_requestAccounts' });
-            providerType = 'MetaMask or Browser Wallet';
-        }
-
-        // Optional: Add WalletConnect later using QR code
-        // For now, we'll just support in-browser wallets like MetaMask and Trust Wallet
-
+        const [account] = await window.ethereum.request({ method: 'eth_requestAccounts' });
         document.getElementById('walletAddress').innerText = `Connected: ${account}`;
         const web3 = new Web3(window.ethereum);
         const balance = await web3.eth.getBalance(account);
         const ethBalance = web3.utils.fromWei(balance, 'ether');
         document.getElementById('walletBalance').innerText = `💰 Balance: ${parseFloat(ethBalance).toFixed(4)} ETH`;
 
-        // Confetti on success 💥
         createSparkles(window.innerWidth / 2, window.innerHeight / 2);
 
     } catch (error) {
@@ -141,7 +153,6 @@ async function connectWallet() {
     }
 }
 
-// Attach to global scope so HTML buttons can use it
 window.connectWallet = connectWallet;
 
 // ============ CONFETTI FUNCTION ============
