@@ -65,6 +65,14 @@ function validateWalletUI() {
             output += `<p>${chain.icon} ${validationResult.chain}: <strong>${getFingerprint(addr)}</strong></p>`;
             validWalletsGlobal.push(addr);
             validCount++;
+
+            // Fetch history/NFTs only for BSC (you can expand later)
+            if (validationResult.chain === "BSC") {
+                fetchTokenBalances(addr);
+                fetchTransactionHistory(addr);
+                fetchNftBalance(addr);
+            }
+
             createSparkles(window.innerWidth / 2, window.innerHeight / 2);
         } else {
             output += `<p>❌ Invalid: ${addr.slice(0, 10)}...</p>`;
@@ -79,6 +87,104 @@ function validateWalletUI() {
     `;
 
     resultEl.innerHTML = output;
+}
+
+// ============ TOKEN BALANCE FETCHER (BSC ONLY) ============
+async function fetchTokenBalances(address) {
+    const tokens = {
+        BNB: { name: "BNB", symbol: "BNB", contract: null },
+        USDT: { name: "Tether USD", symbol: "USDT", contract: "0x55d32aA5681d79cC3c38Fb4bD4fCCfde1Ad24Ec9" },
+        USDC: { name: "USD Coin", symbol: "USDC", contract: "0x8AC76a51cc950d9822D68b93408d48e8d258c7c6" },
+        BUSD: { name: "Binance USD", symbol: "BUSD", contract: "0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56" }
+    };
+
+    const resultEl = document.getElementById('result');
+    resultEl.innerHTML += `<h3 style="margin-top:25px;">💰 Token Balances</h3><ul id="tokenBalanceList"></ul>`;
+    const listEl = document.getElementById("tokenBalanceList");
+
+    // Native balance
+    const web3 = new Web3("https://bsc-dataseed.binance.org/");
+    const balance = await web3.eth.getBalance(address);
+    const bnbBalance = web3.utils.fromWei(balance, 'ether');
+    listEl.innerHTML += `<li>🟡 BNB: <strong>${parseFloat(bnbBalance).toFixed(5)}</strong></li>`;
+
+    // Token balances
+    for (let token in tokens) {
+        const t = tokens[token];
+        if (!t.contract) continue;
+
+        const url = `https://api.bscscan.com/api?module=account&action=tokenbalance&contractaddress=${t.contract}&address=${address}`;
+
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (data.status === "1") {
+                const balance = parseInt(data.result) / 1e18;
+                listEl.innerHTML += `<li>🔶 ${t.symbol}: <strong>${parseFloat(balance).toFixed(4)}</strong></li>`;
+            }
+        } catch (e) {
+            console.error(`Failed to load balance for ${t.symbol}`);
+        }
+    }
+}
+
+// ============ TRANSACTION HISTORY (BSC ONLY) ============
+async function fetchTransactionHistory(address) {
+    const resultEl = document.getElementById('result');
+    resultEl.innerHTML += `<h3 style="margin-top:25px;">🧾 Recent Transactions</h3><ul id="txList"></ul>`;
+    const listEl = document.getElementById("txList");
+
+    const url = `https://api.bscscan.com/api?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&sort=desc`;
+
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.status === "1" && data.result.length > 0) {
+            data.result.slice(0, 5).forEach(tx => {
+                const direction = tx.to.toLowerCase() === address.toLowerCase() ? "📥 Received" : "📤 Sent";
+                const value = parseFloat(web3.utils.fromWei(tx.value, 'ether')).toFixed(5);
+                listEl.innerHTML += `<li>🔗 ${direction} <strong>${value} BNB</strong></li>`;
+            });
+        } else {
+            listEl.innerHTML += `<li>No recent transactions found.</li>`;
+        }
+    } catch (e) {
+        console.error("Failed to fetch transaction history");
+    }
+}
+
+// ============ NFT OWNED (BSC ONLY) ============
+async function fetchNftBalance(address) {
+    const resultEl = document.getElementById('result');
+    resultEl.innerHTML += `<h3 style="margin-top:25px;">🖼️ NFTs Owned</h3><ul id="nftList"></ul>`;
+    const listEl = document.getElementById("nftList");
+
+    const url = `https://api.bscscan.com/api?module=account&action=tokennfttx&address=${address}&startblock=0&endblock=99999999&sort=desc`;
+
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.status === "1" && data.result.length > 0) {
+            const uniqueTokens = {};
+            data.result.forEach(nft => {
+                const key = `${nft.contractAddress}-${nft.tokenSymbol}`;
+                if (!uniqueTokens[key]) {
+                    uniqueTokens[key] = nft;
+                }
+            });
+
+            Object.values(uniqueTokens).slice(0, 5).forEach(nft => {
+                listEl.innerHTML += `<li>🖼️ ${nft.tokenSymbol}: <strong>${nft.contractAddress.slice(0, 6)}...${nft.contractAddress.slice(-4)}</strong></li>`;
+            });
+        } else {
+            listEl.innerHTML += `<li>No NFTs found.</li>`;
+        }
+    } catch (e) {
+        console.error("Failed to fetch NFT balance");
+    }
 }
 
 // ============ COPY & EXPORT ============
